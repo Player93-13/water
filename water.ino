@@ -1,7 +1,7 @@
 #include "FS.h"
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
-#include <WiFiClientSecure.h>
+ADC_MODE(ADC_VCC);
 
 #define DEBUG
 #define N 2 // максимальное количество счетчиков
@@ -12,11 +12,12 @@ int pins[N] = {5, 4/*, 0, 2, 14, 12, 13, 15*/}; // пины счетчиков (
 
 int sleepTime = 2000; // время между циклами сна в мс
 int serverSendDelta = 20; // периодичность отправки на сервер в литрах
+int vcc = 0; // текущее напряжение питания в мВ
 
 struct
 {
   uint32_t userID = 12345;              // идентификатор пользователя на сервере
-  char url[128] = "https://papi.mrsu.ru:443/v1/ping"; // адрес для отправки на сервер
+  char url[128] = "http://csz.mrsu.ru/"; // адрес для отправки на сервер
   char names[N][32] = {"1212", "2323"};            // идентификаторы счетчиков
   uint32_t valueOfDivisions[N] = {10, 10}; // литров на импульс счетчиков
   uint32_t offsets[N] = {1300, 1600};          // начальное значение отсчета счетчиков в литрах
@@ -49,17 +50,13 @@ bool sendToServer(uint32_t *values)
     delay(500);
     Serial.print(".");
   }
-  
+
 #ifdef DEBUG
   Serial.println("Wi-Fi connected!");
 #endif
 
-  WiFiClientSecure client;
-  client.setInsecure(); //the magic line, use with caution
-  client.connect(conf.url, 443);
-
   HTTPClient http;
-  http.begin(client, conf.url);
+  http.begin(conf.url);
 
   String payload;
   if (http.GET() == HTTP_CODE_OK)
@@ -175,6 +172,8 @@ bool checkCycle()
 
 void setup()
 {
+  vcc = ESP.getVcc();
+
   for (int i = 0; i < N; i++)
     pinMode(pins[i], INPUT_PULLUP);
 
@@ -183,11 +182,13 @@ void setup()
   Serial.setTimeout(2000);
   while (!Serial) { }
   Serial.println();
+  Serial.print("vcc: ");
+  Serial.println(vcc);
 #endif
 
   if (checkCycle())
-    //ESP.deepSleep(sleepTime * 1000, WAKE_RF_DISABLED);
-    ESP.deepSleep(sleepTime * 1000);
+    ESP.deepSleep(sleepTime * 1000, WAKE_RF_DISABLED);
+  //ESP.deepSleep(sleepTime * 1000);
 }
 
 void loop()
