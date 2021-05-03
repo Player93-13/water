@@ -23,6 +23,35 @@ struct
   uint32_t offsets[N] = {1300, 1600};          // начальное значение отсчета счетчиков в литрах
 } conf;
 
+struct
+{
+  uint32_t crc32;
+  uint32_t states[N * 2 + 1]; // сначала состояния пинов счетчика, затем текущее кол-во литров, затем сумма последних отправленных значений на сервер
+} rtcState;
+
+struct
+{
+  uint32_t states[N + 1]; // сначала текущее кол-во литров, затем сумма последних отправленных значений на сервер
+} spiffState;
+
+uint32_t calculateCRC32(const uint8_t *data, size_t length) {
+  uint32_t crc = 0xffffffff;
+  while (length--) {
+    uint8_t c = *data++;
+    for (uint32_t i = 0x80; i > 0; i >>= 1) {
+      bool bit = crc & 0x80000000;
+      if (c & i) {
+        bit = !bit;
+      }
+      crc <<= 1;
+      if (bit) {
+        crc ^= 0x04c11db7;
+      }
+    }
+  }
+  return crc;
+}
+
 uint32_t IntFromByteArr(uint8_t *bytes)
 {
   uint32_t myInt1 = (bytes[0] << 24) + (bytes[1] << 16) + (bytes[2] << 8) + bytes[3];
@@ -70,18 +99,52 @@ bool sendToServer(uint32_t *values)
   return true;
 }
 
+void getSpiffState()
+{
+
+}
+
+// return true если значение найдено в памяти, false - если первая инициализация при включении
+bool reedRtcState()
+{
+  if (ESP.rtcUserMemoryRead(0, (uint32_t*) &rtcState, sizeof(rtcState)))
+  {
+    uint32_t crcOfData = calculateCRC32((uint8_t*) &rtcState.states[0], sizeof(states) * 4);
+    if (crcOfData != rtcState.crc32) {
+#ifdef DEBUG
+      Serial.println("CRC32 in RTC memory doesn't match CRC32 of data. Data is probably invalid!");
+#endif
+
+      getSpiffState();
+      for (int i = N; i < N * 2 + 1; i++)
+      {
+        rtcState.states[i] = spiffState.states[i];
+      }
+
+      return false;
+    }
+    return true;
+  }
+  return false;
+}
+
+void writeRtcState()
+{
+  rtcState.crc32 = calculateCRC32((uint8_t*) &rtcState.states[0], sizeof(states) * 4);
+  if (ESP.rtcUserMemoryWrite(0, (uint32_t*) &rtcState, sizeof(rtcState))) { }
+}
+
 bool checkCycle()
 {
   bool result = true; // возвращаемый результат успешной операции
-
-  // считываем показания датчиков
   int values[N];
   bool isChanged = false;
+  
+  // считываем показания датчиков
   for (int i = 0; i < N; i++)
     values[i] = digitalRead(pins[i]);
 
-  // счиываем с RTC памяти предыдущие показания датчиков
-  if (ESP.rtcUserMemoryRead(0, (uint32_t*) &states, sizeof(states)))
+  if (reedRtcState())
   {
     for (int i = 0; i < N; i++)
     {
@@ -94,78 +157,79 @@ bool checkCycle()
       if (states[i] - values[i] == 1)
         isChanged = true;
     }
-  }
 
-  // если показания изменились то сохраняем во флеш и отправляем на сервер по необходимости
-  if (isChanged)
-  {
-    if (SPIFFS.begin())
+    // если показания изменились то сохраняем во флеш и отправляем на сервер по необходимости
+    if (isChanged)
     {
-      //SPIFFS.remove("/state.bin");
-      uint8_t a[4]; // временный массив байтов для записи в бинарный файл
-      File fileState = SPIFFS.open("/state.bin", "r+");
-      if (!fileState)
+      if (SPIFFS.begin())
       {
-        fileState = SPIFFS.open("/state.bin", "w");
-        for (int i = 0; i < N; i++)
+        //SPIFFS.remove("/state.bin");
+        uint8_t a[4]; // временный массив байтов для записи в бинарный файл
+        File fileState = SPIFFS.open("/state.bin", "r+");
+        if (!fileState)
         {
-          IntToByteArr(conf.offsets[i] + conf.valueOfDivisions[i], a);
+          fileState = SPIFFS.open("/state.bin", "w");
+          for (int i = 0; i < N; i++)
+          {
+            IntToByteArr(conf.offsets[i] + conf.valueOfDivisions[i], a);
+            fileState.write(a, 4);
+          }
+          IntToByteArr(0, a);
           fileState.write(a, 4);
         }
-        IntToByteArr(0, a);
-        fileState.write(a, 4);
-      }
-      else
-      {
-        uint32_t spValues[N];
-        uint32_t sum = 0;
-        for (int i = 0; i < N; i++)
+        else
         {
+          uint32_t spValues[N];
+          uint32_t sum = 0;
+          for (int i = 0; i < N; i++)
+          {
+            fileState.read(a, 4);
+            spValues[i] = IntFromByteArr(a);
+
+            if (states[i] - values[i] == 1)
+              spValues[i] += conf.valueOfDivisions[i];
+
+            sum += spValues[i];
+          }
+
           fileState.read(a, 4);
-          spValues[i] = IntFromByteArr(a);
-
-          if (states[i] - values[i] == 1)
-            spValues[i] += conf.valueOfDivisions[i];
-
-          sum += spValues[i];
-        }
-
-        fileState.read(a, 4);
-        uint32_t serverSended = IntFromByteArr(a);
-        if (sum - serverSended >= serverSendDelta)
-        {
-          result = sendToServer(spValues);
-          serverSended = sum;
+          uint32_t serverSended = IntFromByteArr(a);
+          if (sum - serverSended >= serverSendDelta)
+          {
+            result = sendToServer(spValues);
+            serverSended = sum;
 #ifdef DEBUG
-          Serial.print("Server sended: ");
-          Serial.println(serverSended);
+            Serial.print("Server sended: ");
+            Serial.println(serverSended);
 #endif
-        }
+          }
 
-        fileState.seek(0);
+          fileState.seek(0);
 
-        for (int i = 0; i < N; i++)
-        {
-          IntToByteArr(spValues[i], a);
+          for (int i = 0; i < N; i++)
+          {
+            IntToByteArr(spValues[i], a);
+            fileState.write(a, 4);
+
+#ifdef DEBUG
+            Serial.println(spValues[i]);
+#endif
+          }
+
+          IntToByteArr(serverSended, a);
           fileState.write(a, 4);
-
-#ifdef DEBUG
-          Serial.println(spValues[i]);
-#endif
         }
 
-        IntToByteArr(serverSended, a);
-        fileState.write(a, 4);
+        fileState.close();
       }
-
-      fileState.close();
     }
   }
+
 
   // сохраняем показания датчиков в память RTC
   for (int i = 0; i < N; i++)
     states[i] = values[i];
-  if (ESP.rtcUserMemoryWrite(0, (uint32_t*) &states, sizeof(states))) { }
+  writeRtcState();
 
   return result;
 }
