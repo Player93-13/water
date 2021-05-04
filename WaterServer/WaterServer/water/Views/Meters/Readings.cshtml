@@ -1,0 +1,47 @@
+﻿@model IEnumerable<water.Models.Meter>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var readings = Model.SelectMany(m => m.Readings).GroupBy(r => r.Date).OrderByDescending(gr => gr.Key);
+}
+
+<h1>Readings</h1>
+
+@if (readings.Any())
+{
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Vcc</th>
+                @foreach (var item in Model)
+                {
+                    <th>
+                        <a asp-action="Details" asp-route-id="@item.Id">@item.Number</a>
+                    </th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in readings)
+            {
+                <tr>
+                    <td>@item.Key</td>
+                    <td>@item.FirstOrDefault()?.Vcc</td>
+                    @foreach (var meter in Model)
+                    {
+                        <td>
+                            @item.FirstOrDefault(r => r.MeterId == meter.Id)?.Value
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-info">No data.</div>
+}
