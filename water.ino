@@ -2,19 +2,20 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <RTCVars.h>
+#include <ArduinoJson.h>
 ADC_MODE(ADC_VCC);
 
 RTCVars state;
 
-#define DEBUG
+//#define DEBUG
 #define N 2 // максимальное количество счетчиков
 
-const char stateFile[] = "/state123.bin";
-const char sendedFile[] = "/sended123.bin";
+const char stateFile[] = "/state123456.bin";
+const char sendedFile[] = "/sended123456.bin";
 const int pins[N] = {5, 4/*, 0, 2, 14, 12, 13, 15*/}; // пины счетчиков (не изменяются)
 
-int sleepTime = 2000; // время между циклами сна в мс
-int serverSendDelta = 20; // периодичность отправки на сервер в литрах
+int sleepTime = 4000; // время между циклами сна в мс
+int serverSendDelta = 50; // периодичность отправки на сервер в литрах
 int vcc = 0; // текущее напряжение питания в мВ
 
 struct
@@ -23,7 +24,7 @@ struct
   char url[128] = "http://194.54.66.110/api/MeterReadings"; // адрес для отправки на сервер
   char names[N][32] = {"44958160", "44354311"};            // идентификаторы счетчиков
   uint32_t valueOfDivisions[N] = {10, 10}; // литров на импульс счетчиков
-  uint32_t offsets[N] = {1307, 1606};          // начальное значение отсчета счетчиков в литрах
+  uint32_t offsets[N] = {3566, 5015};          // начальное значение отсчета счетчиков в литрах
 } conf;
 
 int rtcPinStates[N];
@@ -131,11 +132,22 @@ bool sendToServer()
     http.begin(client, conf.url); //HTTP
     http.addHeader("Content-Type", "application/json");
 
+DynamicJsonDocument doc(1024);    
+doc["UserId"] = conf.userID;
+doc["Vcc"]   = vcc;
+for (int i = 0; i < N; i++)
+{
+  doc["Meters"][i]["Number"] = conf.names[i];
+  doc["Meters"][i]["Value"] = rtcLitStates[i];
+}
+String postJson;
+serializeJson(doc, postJson);
+
 #ifdef DEBUG
     Serial.print("[HTTP] POST...\n");
 #endif
     // start connection and send HTTP header and body
-    int httpCode = http.POST("{\"hello\":\"world\"}");
+    int httpCode = http.POST(postJson);
 
     // httpCode will be negative on error
     if (httpCode > 0) {
