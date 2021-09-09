@@ -6,6 +6,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
   <PropertyGroup>
     <TimeStampOfAssociatedLegacyPublishXmlFile />
     <_PublishTargetUrl>C:\Users\lhmms\Documents\GitHub\water\WaterServer\WaterServer\water\bin\Release\net5.0\publish\</_PublishTargetUrl>
+    <History>True|2021-09-09T15:04:24.2712759Z;</History>
   </PropertyGroup>
   <ItemGroup>
     <DestinationConnectionStrings Include="DefaultConnection">

@@ -1,47 +1,80 @@
-﻿@model IEnumerable<water.Models.Meter>
+﻿@using X.PagedList.Mvc.Core
+@using X.PagedList
+@using X.PagedList.Web.Common
+@using water.ViewModels
+@model MeterReadingsViewModel
 
 @{
     ViewData["Title"] = "Index";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
-    var readings = Model.SelectMany(m => m.Readings).GroupBy(r => r.Date).OrderByDescending(gr => gr.Key);
+    var paginationOptions = new PagedListRenderOptions()
+    {
+        PageClasses = new string[] { "page-link" },
+        LiElementClasses = new[] { "page-item" },
+        UlElementClasses = new[] { "pagination", "justify-content-center" },
+        DisplayLinkToPreviousPage = PagedListDisplayMode.Always,
+        DisplayLinkToNextPage = PagedListDisplayMode.Always
+    };
 }
 
 <h1>Readings</h1>
 
-@if (readings.Any())
-{
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Vcc</th>
-                @foreach (var item in Model)
-                {
-                    <th>
-                        <a asp-action="Details" asp-route-id="@item.Id">@item.Number</a>
-                    </th>
-                }
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in readings)
-            {
+<form asp-action="@nameof(water.Controllers.MetersController.Readings)" method="get">
+    <div class="form-group">
+        <label asp-for="Order"></label>
+        <select class="form-control auto-submit" asp-for="Order" asp-items="Html.GetEnumSelectList<PaginationViewModel.OrderBy>()"></select>
+    </div>
+    <div class="form-group">
+        <label asp-for="PageSize"></label>
+        <select class="form-control auto-submit" asp-for="PageSize" asp-items="Html.GetEnumSelectList<PageSize>()"></select>
+    </div>
+</form>
+
+@Html.PagedListPager(Model.DateTimes, page => Url.Action(nameof(water.Controllers.MetersController.Readings),
+    new { page, PageSize = (int)Model.PageSize, Order = (int)Model.Order }),
+    paginationOptions)
+
+@if (Model.DateTimes.Any())
+    {
+        <table class="table table-bordered">
+            <thead>
                 <tr>
-                    <td>@item.Key</td>
-                    <td>@item.FirstOrDefault()?.Vcc</td>
-                    @foreach (var meter in Model)
+                    <th>Date</th>
+                    <th>Vcc</th>
+                    @foreach (var item in Model.Meters)
+                    {
+                        <th>
+                            <a asp-action="Details" asp-route-id="@item.Id">@item.Number</a>
+                        </th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.DateTimes.Count; i++)
+                {
+                <tr>
+                    <td>@Model.DateTimes[i]</td>
+                    <td>@Model.Readings[i, 0]?.Vcc</td>
+                    @for (int j = 0; j < Model.Meters.Count; j++)
                     {
                         <td>
-                            @item.FirstOrDefault(r => r.MeterId == meter.Id)?.Value
+                            @Model.Readings[i, j]?.Value
+                            @if (i + 1 < Model.DateTimes.Count)
+                            {
+                                if (Model.Readings[i+1, j] != null)
+                                {
+                                    <span>(@(Model.Readings[i, j].Value - Model.Readings[i + 1, j].Value))</span>
+                                }
+                            }
                         </td>
                     }
                 </tr>
-            }
-        </tbody>
-    </table>
-}
-else
-{
-    <div class="alert alert-info">No data.</div>
-}
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-info">No data.</div>
+    }

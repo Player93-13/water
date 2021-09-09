@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using water.Data;
 using water.Models;
+using water.ViewModels;
+using X.PagedList;
 
 namespace water.Controllers
 {
@@ -16,28 +18,65 @@ namespace water.Controllers
     public class MetersController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly UserManager<ApplicationUser> _userManager;
 
-        public MetersController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public MetersController(ApplicationDbContext context)
         {
             _context = context;
-            _userManager = userManager;
         }
 
-        public async Task<IActionResult> Readings()
+        public async Task<IActionResult> Readings(int? page, int? pagesize)
         {
-            var userId = (await _userManager.GetUserAsync(HttpContext.User)).Id;
-            var result = _context.Meters
-                .Where(m => m.UserId == userId)
-                .Include(m => m.Readings);
+            var search = new MeterReadingsViewModel();
 
-            return View(await result.ToListAsync());
+            await TryUpdateModelAsync(search);
+
+            var userId = HttpContext.User.GetId();
+
+            var dates = _context.MeterReadings
+                         .Where(mr => mr.Meter.UserId == userId)
+                         .GroupBy(mr => mr.Date)
+                         .Select(gr => gr.Key);
+
+            switch (search.Order)
+            {
+                case PaginationViewModel.OrderBy.DateDesc:
+                    dates = dates.OrderByDescending(dt => dt);
+                    break;
+                case PaginationViewModel.OrderBy.Date:
+                    dates = dates.OrderBy(dt => dt);
+                    break;
+            }
+
+            var pgs = (int)search.PageSize;
+            var pg = page ?? 1;
+
+            search.DateTimes = new PagedList<DateTime>(dates, pg, pgs);
+
+            var mindate = search.DateTimes.Min();
+            var maxdate = search.DateTimes.Max();
+
+            var readings = await _context.MeterReadings.Include(mr => mr.Meter)
+                .Where(mr => mr.Meter.UserId == userId && mr.Date >= mindate && mr.Date <= maxdate)
+                .OrderBy(mr => mr.Date).ThenBy(mr => mr.Id).ToListAsync();
+
+            search.Meters = readings.Select(mr => mr.Meter).Distinct().ToList(); ;
+
+            search.Readings = new MeterReading[search.DateTimes.Count, search.Meters.Count];
+            for (int i = 0; i < search.DateTimes.Count; i++)
+            {
+                for (int j = 0; j < search.Meters.Count; j++)
+                {
+                    search.Readings[i,j] = readings.Where(mr => mr.Date == search.DateTimes[i] && mr.MeterId == search.Meters[j].Id).FirstOrDefault();
+                }
+            }
+
+            return View(search);
         }
 
         // GET: Meters
         public async Task<IActionResult> Index()
         {
-            var userId = (await _userManager.GetUserAsync(HttpContext.User)).Id;
+            var userId = HttpContext.User.GetId();
             var result = _context.Meters
                 .Where(m => m.UserId == userId);
 
@@ -47,12 +86,14 @@ namespace water.Controllers
         // GET: Meters/Details/5
         public async Task<IActionResult> Details(int? id)
         {
+            var userId = HttpContext.User.GetId();
             if (id == null)
             {
                 return NotFound();
             }
 
             var meter = await _context.Meters
+                .Where(m => m.UserId == userId)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (meter == null)
             {
@@ -75,7 +116,7 @@ namespace water.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Number")] Meter meter)
         {
-            meter.UserId = (await _userManager.GetUserAsync(HttpContext.User)).Id;
+            meter.UserId = HttpContext.User.GetId();
             if (ModelState.IsValid)
             {
                 _context.Add(meter);
@@ -93,7 +134,8 @@ namespace water.Controllers
                 return NotFound();
             }
 
-            var meter = await _context.Meters.FindAsync(id);
+            var userId = HttpContext.User.GetId();
+            var meter = await _context.Meters.Where(m => m.UserId == userId).FirstOrDefaultAsync(m => m.Id == id);
             if (meter == null)
             {
                 return NotFound();
@@ -108,7 +150,8 @@ namespace water.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id)
         {
-            var meter = await _context.Meters.FindAsync(id);
+            var userId = HttpContext.User.GetId();
+            var meter = await _context.Meters.Where(m => m.UserId == userId).FirstOrDefaultAsync(m => m.Id == id);
             if (meter == null)
             {
                 return NotFound();
@@ -147,8 +190,8 @@ namespace water.Controllers
                 return NotFound();
             }
 
-            var meter = await _context.Meters
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var userId = HttpContext.User.GetId();
+            var meter = await _context.Meters.Where(m => m.UserId == userId).FirstOrDefaultAsync(m => m.Id == id);
             if (meter == null)
             {
                 return NotFound();
@@ -162,7 +205,12 @@ namespace water.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var meter = await _context.Meters.FindAsync(id);
+            var userId = HttpContext.User.GetId();
+            var meter = await _context.Meters.Where(m => m.UserId == userId).FirstOrDefaultAsync(m => m.Id == id);
+            if (meter == null)
+            {
+                return NotFound();
+            }
             _context.Meters.Remove(meter);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
