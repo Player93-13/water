@@ -24,6 +24,11 @@ namespace water.Controllers
             _context = context;
         }
 
+        public IActionResult Charts()
+        {
+            return View();
+        }
+
         public async Task<IActionResult> Readings(int? page, int? pagesize)
         {
             var search = new MeterReadingsViewModel();
@@ -83,26 +88,6 @@ namespace water.Controllers
             return View(await result.ToListAsync());
         }
 
-        // GET: Meters/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            var userId = HttpContext.User.GetId();
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var meter = await _context.Meters
-                .Where(m => m.UserId == userId)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (meter == null)
-            {
-                return NotFound();
-            }
-
-            return View(meter);
-        }
-
         // GET: Meters/Create
         public IActionResult Create()
         {
@@ -114,7 +99,7 @@ namespace water.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Number")] Meter meter)
+        public async Task<IActionResult> Create([Bind("Number,Title,ColorGraphHex")] Meter meter)
         {
             meter.UserId = HttpContext.User.GetId();
             if (ModelState.IsValid)

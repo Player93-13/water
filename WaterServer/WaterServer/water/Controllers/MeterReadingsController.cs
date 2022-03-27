@@ -35,7 +35,13 @@ namespace water.Controllers
                 var meter = userMeters.FirstOrDefault(m => m.Number == item.Number);
                 if (meter != null)
                 {
-                    _context.MeterReadings.Add(new MeterReading { MeterId = meter.Id, Value = item.Value, Vcc = meterReading.Vcc, Date = date });
+                    _context.MeterReadings.Add(new MeterReading 
+                    { 
+                        MeterId = meter.Id, 
+                        Value = item.Value, 
+                        Vcc = item.Vcc ?? meterReading.Vcc, 
+                        Date = item.Date ?? date 
+                    });
                 }
             }
 

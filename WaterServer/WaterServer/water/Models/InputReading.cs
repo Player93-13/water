@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
 
 namespace water.Models
 {
@@ -16,8 +15,13 @@ namespace water.Models
 
     public class InputMeter
     {
+        [Required]
         public string Number { get; set; }
 
         public int Value { get; set; }
+
+        public int? Vcc { get; set; }
+
+        public DateTime? Date { get; set; }
     }
 }
