@@ -25,7 +25,7 @@ namespace water.Models
 
         [NotMapped]
         [Display(Name = "Цвет на графике")]
-        public string ColorGraphHex { get => ColorGraph.ToString("X6"); set => ColorGraph = int.Parse(value, System.Globalization.NumberStyles.HexNumber); }
+        public string ColorGraphHex { get => "#" + ColorGraph.ToString("X6"); set => ColorGraph = int.Parse(value.Substring(1, 6), System.Globalization.NumberStyles.HexNumber); }
 
         public virtual ApplicationUser User { get; set; }
 

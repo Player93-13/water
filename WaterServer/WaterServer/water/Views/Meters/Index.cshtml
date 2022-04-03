@@ -35,7 +35,7 @@
                 @Html.DisplayFor(modelItem => item.Title)
             </td>
             <td>
-                <div style="height:100%; background-color: #@item.ColorGraphHex; color: #@item.ColorGraphHex;">X</div>
+                <div style="height:100%; background-color: @item.ColorGraphHex; color: @item.ColorGraphHex;">X</div>
             </td>
             <td>
                 <a asp-action="Edit" asp-route-id="@item.Id">Редактировать</a> |

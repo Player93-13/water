@@ -1,6 +1,27 @@
 ﻿@using Microsoft.AspNetCore.Identity
 @inject SignInManager<ApplicationUser> SignInManager
+@{
+    string controller = ViewContext.RouteData.Values["Controller"]?.ToString();
+    string action = ViewContext.RouteData.Values["Action"]?.ToString();
+    int activeLink = 0;
+    if(controller == "Meters")
+    {
+        switch(action)
+        {
+            case "Readings":
+            activeLink = 2;
+            break;
 
+            case "Charts":
+            activeLink = 3;
+            break;
+
+            default:
+            activeLink = 1;
+            break;
+        }
+    }
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,28 +29,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - САУППУ</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.css">
     <link rel="stylesheet" href="~/css/site.css" />
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand navbar-light border-bottom box-shadow mb-3" style="background-color: #e3f2fd;">
             <div class="container">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">САУППУ</a>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index" title="Система автоматического учета показаний приборов учета">САУППУ</a>
+                <ul class="navbar-nav me-auto">
+                    @if (SignInManager.IsSignedIn(User))
+                    {
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Meters" asp-action="Index">Приборы учета</a>
+                            <a class="nav-link @(activeLink == 1 ? "active" : null)" asp-area="" asp-controller="Meters" asp-action="Index" title="Приборы учета"><i class="bi bi-speedometer"></i><span class="d-none d-sm-inline"> Приборы<span class="d-none d-md-inline"> учета</span></span></a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Meters" asp-action="Readings">Показания</a>
+                            <a class="nav-link @(activeLink == 2 ? "active" : null)" asp-area="" asp-controller="Meters" asp-action="Readings" title="Показания"><i class="bi bi-table"></i><span class="d-none d-sm-inline"> Показания</span></a>
                         </li>
-                    </ul>
-                    <partial name="_LoginPartial" />
-                </div>
+                        <li class="nav-item">
+                            <a class="nav-link @(activeLink == 3 ? "active" : null)" asp-area="" asp-controller="Meters" asp-action="Charts" title="Графики"><i class="bi bi-bar-chart-line"></i> Графики</a>
+                        </li>
+                    }
+                </ul>
+                <partial name="_LoginPartial" />
             </div>
         </nav>
     </header>
@@ -41,7 +63,11 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2021 - Система автоматического учета показаний приборов учета
+            <div class="row align-items-center" style="height: 60px;">
+                <div class="col">
+                    <span>&copy; 2021 - Система автоматического учета показаний приборов учета</span>
+                </div>
+            </div>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

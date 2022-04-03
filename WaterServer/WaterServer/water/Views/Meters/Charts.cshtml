@@ -2,13 +2,83 @@
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
 @{
-    <div>
-  <canvas id="myChart"></canvas>
-</div>
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <label for="dstart" class="form-label">начало</label>
+                    <input type="date" class="form-control target" id="dstart" name="dstart">
+                </div>
+                <div class="col-sm-6">
+                    <label for="dend" class="form-label">конец</label>
+                    <input type="date" class="form-control target" id="dend" name="dend">
+                </div>
+                <div class="col-12">
+                    <div class="btn-toolbar row g-2" role="toolbar">
+                        <div class="btn-group col-md-8" role="group">
+                            <input type="radio" class="btn-check" name="date_preset" id="dp1" value="1" autocomplete="off">
+                            <label class="btn btn-outline-secondary" for="dp1">текущая неделя</label>
 
+                            <input type="radio" class="btn-check" name="date_preset" id="dp2" value="2" autocomplete="off">
+                            <label class="btn btn-outline-secondary" for="dp2">текущий месяц</label>
+
+                            <input type="radio" class="btn-check" name="date_preset" id="dp3" value="3" autocomplete="off">
+                            <label class="btn btn-outline-secondary" for="dp3">текущий год</label>
+                        </div>
+                        <div class="btn-group col-md-4" role="group">
+                            <input type="radio" class="btn-check" name="date_preset" id="dp4" value="4" autocomplete="off">
+                            <label class="btn btn-outline-secondary" for="dp4">неделя</label>
+
+                            <input type="radio" class="btn-check" name="date_preset" id="dp5" value="5" autocomplete="off" checked>
+                            <label class="btn btn-outline-secondary" for="dp5">месяц</label>
+
+                            <input type="radio" class="btn-check" name="date_preset" id="dp6" value="6" autocomplete="off">
+                            <label class="btn btn-outline-secondary" for="dp6">год</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row justify-content-between g-2">
+                <div class="col-auto">
+                    <div class="btn-group" role="group" title="Группировать по:">
+                        <input type="radio" class="btn-check" name="group_by" id="gb1" value="1" autocomplete="off" checked>
+                        <label class="btn btn-outline-secondary" for="gb1">дням</label>
+
+                        <input type="radio" class="btn-check" name="group_by" id="gb2" value="2" autocomplete="off">
+                        <label class="btn btn-outline-secondary" for="gb2">неделям</label>
+
+                        <input type="radio" class="btn-check" name="group_by" id="gb3" value="3" autocomplete="off">
+                        <label class="btn btn-outline-secondary" for="gb3">месяцам</label>
+
+                        <input type="radio" class="btn-check" name="group_by" id="gb4" value="4" autocomplete="off">
+                        <label class="btn btn-outline-secondary" for="gb4">годам</label>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="spinner-border text-secondary hidden" role="status" id="spinner">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <button type="button" id="btn_prev" class="btn btn-outline-secondary bt-nav"><i class="bi bi-arrow-left"></i></button>
+                    <button type="button" id="btn_next" class="btn btn-outline-secondary bt-nav"><i class="bi bi-arrow-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <canvas id="myChart"></canvas>
+    </div>
+}
+
+@section Scripts {
+<script src="~/lib/datejs/date-ru-RU.js"></script>
+<script src="~/lib/datejs/core.js"></script>
 <script src="~/lib/chart.js/dist/chart.js"></script>
-<script src="~/js/Charts.js"></script>
-<script>
-  
-</script>
+<script src="~/js/appcharts.js" asp-append-version="true"></script>
 }

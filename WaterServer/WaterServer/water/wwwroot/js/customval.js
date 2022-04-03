@@ -1,9 +1,13 @@
 ﻿$.validator.setDefaults({
     highlight: function (element) {
-        $(element).addClass('is-invalid').removeClass('is-valid');
+        if (!$(element).hasClass('validate-ignore')) {
+            $(element).addClass('is-invalid').removeClass('is-valid');
+        }
     },
     unhighlight: function (element) {
-        $(element).removeClass('is-invalid').addClass('is-valid');
+        if (!$(element).hasClass('validate-ignore')) {
+            $(element).removeClass('is-invalid').addClass('is-valid');
+        }
     }
 });
 

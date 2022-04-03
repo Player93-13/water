@@ -5,7 +5,7 @@
 @model MeterReadingsViewModel
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Показания";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
     var paginationOptions = new PagedListRenderOptions()
@@ -14,19 +14,20 @@
         LiElementClasses = new[] { "page-item" },
         UlElementClasses = new[] { "pagination", "justify-content-center" },
         DisplayLinkToPreviousPage = PagedListDisplayMode.Always,
-        DisplayLinkToNextPage = PagedListDisplayMode.Always
+        DisplayLinkToNextPage = PagedListDisplayMode.Always,
+        MaximumPageNumbersToDisplay = 5
     };
 }
 
-<h1>Readings</h1>
+<h1>@ViewData["Title"]</h1>
 
 <form asp-action="@nameof(water.Controllers.MetersController.Readings)" method="get">
-    <div class="form-group">
-        <label asp-for="Order"></label>
+    <div class="mb-3">
+        <label asp-for="Order" class="form-label"></label>
         <select class="form-control auto-submit" asp-for="Order" asp-items="Html.GetEnumSelectList<PaginationViewModel.OrderBy>()"></select>
     </div>
-    <div class="form-group">
-        <label asp-for="PageSize"></label>
+    <div class="mb-3">
+        <label asp-for="PageSize" class="form-label"></label>
         <select class="form-control auto-submit" asp-for="PageSize" asp-items="Html.GetEnumSelectList<PageSize>()"></select>
     </div>
 </form>
@@ -55,16 +56,16 @@
                 {
                 <tr>
                     <td>@Model.DateTimes[i]</td>
-                    <td>@Model.Readings[i, 0]?.Vcc</td>
+                    <td>@for (int j = 0; j < Model.Meters.Count; j++) { if (Model.Readings[i, j]?.Vcc != null) { @Model.Readings[i, j].Vcc; break; } }</td>
                     @for (int j = 0; j < Model.Meters.Count; j++)
                     {
                         <td>
                             @Model.Readings[i, j]?.Value
                             @if (i + 1 < Model.DateTimes.Count)
                             {
-                                if (Model.Readings[i+1, j] != null)
+                                if (Model.Readings[i + 1, j] != null && Model.Readings[i, j] != null)
                                 {
-                                    <span>(@(Model.Readings[i, j].Value - Model.Readings[i + 1, j].Value))</span>
+                                    <span title="разница">(@(Model.Readings[i, j].Value - Model.Readings[i + 1, j].Value))</span>
                                 }
                             }
                         </td>

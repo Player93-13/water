@@ -1,12 +1,10 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using water.Data;
 using water.Models;
 using water.ViewModels;
@@ -71,7 +69,7 @@ namespace water.Controllers
             {
                 for (int j = 0; j < search.Meters.Count; j++)
                 {
-                    search.Readings[i,j] = readings.Where(mr => mr.Date == search.DateTimes[i] && mr.MeterId == search.Meters[j].Id).FirstOrDefault();
+                    search.Readings[i, j] = readings.Where(mr => mr.Date == search.DateTimes[i] && mr.MeterId == search.Meters[j].Id).FirstOrDefault();
                 }
             }
 
