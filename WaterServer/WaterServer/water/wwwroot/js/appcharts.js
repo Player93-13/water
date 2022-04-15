@@ -2,18 +2,25 @@
     type: 'bar',
     data: null,
     options: {
-        plugins: {
-            title: {
-                display: true,
-                text: 'Расход за месяц по дням'
-            },
-        },
+        locale: 'ru-RU',
         responsive: true,
         scales: {
             x: {
-                stacked: true,
+                time: {
+                    // Luxon format string
+                    tooltipFormat: 'DD T'
+                },
+                title: {
+                    display: true,
+                    text: 'даты'
+                },
+                stacked: true
             },
             y: {
+                title: {
+                    display: true,
+                    text: 'литры'
+                },
                 stacked: true
             }
         }
@@ -50,33 +57,33 @@ $('input[type=radio][name=date_preset]').change(function () {
     }
     switch (this.value) {
         case '1':
-            $('input[name=dstart]').val(DateToVal(Date.tuesday()));
-            $('input[name=dend]').val(DateToVal(Date.next().monday()));
+            $('input[name=dstart]').val(DateToVal(moment().startOf('week').add(1, 'days')));
+            $('input[name=dend]').val(DateToVal(moment().endOf('week')));
             break;
 
         case '2':
-            $('input[name=dstart]').val(DateToVal(Date.today().set({ day: 2 })));
-            $('input[name=dend]').val(DateToVal(Date.today()));
+            $('input[name=dstart]').val(DateToVal(moment().startOf('month').add(1, 'days')));
+            $('input[name=dend]').val(DateToVal(moment().endOf('month')));
             break;
 
         case '3':
-            $('input[name=dstart]').val(DateToVal(Date.today().set({ month: 0, day: 2 })));
-            $('input[name=dend]').val(DateToVal(Date.today()));
+            $('input[name=dstart]').val(DateToVal(moment().startOf('year').add(1, 'days')));
+            $('input[name=dend]').val(DateToVal(moment().endOf('year')));
             break;
 
         case '4':
-            $('input[name=dstart]').val(DateToVal(Date.today().addDays(-7)));
-            $('input[name=dend]').val(DateToVal(Date.today()));
+            $('input[name=dstart]').val(DateToVal(moment().add(-6, 'days')));
+            $('input[name=dend]').val(DateToVal(moment()));
             break;
 
         case '5':
-            $('input[name=dstart]').val(DateToVal(Date.today().addMonths(-1)));
-            $('input[name=dend]').val(DateToVal(Date.today()));
+            $('input[name=dstart]').val(DateToVal(moment().add(-1, 'months')));
+            $('input[name=dend]').val(DateToVal(moment()));
             break;
 
         case '6':
-            $('input[name=dstart]').val(DateToVal(Date.today().addMonths(-12)));
-            $('input[name=dend]').val(DateToVal(Date.today()));
+            $('input[name=dstart]').val(DateToVal(moment().add(-1, 'years')));
+            $('input[name=dend]').val(DateToVal(moment()));
             break;
     }
 
@@ -87,29 +94,58 @@ function DateToVal(d) {
     return d.toISOString().slice(0, 10);
 }
 
-function datediff(first, second) {
-    return Math.round((second - first) / (1000 * 60 * 60 * 24));
-}
-
 $(".target").change(function () {
     $('input[name=date_preset]').prop('checked', false);
     Update();
 });
 
+function ChangeType(e) {
+    switch (e) {
+        case '1':
+            config.type = 'bar';
+            config.options.scales.x.stacked = true;
+            config.options.scales.y.stacked = true;
+            break;
+
+        case '2':
+            config.type = 'line';
+            config.options.scales.x.stacked = false;
+            config.options.scales.y.stacked = false;
+            break;
+    }
+}
+
 $('input[name=group_by]').change(function () {
+    if (this.value == '0') {
+        $('input[name=graph_type][value=2]').prop("checked", true);
+        $('input[name=graph_type][value=1]').attr("disabled", true);
+        config.options.scales.x.type = 'time';
+        ChangeType('2');
+    }
+    else {
+        $('input[name=graph_type][value=1]').attr("disabled", false);
+        config.options.scales.x.type = 'category';
+    }
+    Update();
+});
+
+$('input[name=graph_type]').change(function () {
+    ChangeType(this.value);
     Update();
 });
 
 $('.bt-nav').click(function () {
-    var dstart = new Date($('input[name=dstart]').val());
-    var dend = new Date($('input[name=dend]').val());
-    var diff = datediff(dstart, dend);
+    var dstart = new moment($('input[name=dstart]').val());
+    var dend = new moment($('input[name=dend]').val());
+    var diff = dend.diff(dstart, 'days');
     if ($(this).attr('id') == 'btn_prev') {
         diff = -diff;
+    } else {
+        diff += 2;
     }
 
-    $('input[name=dstart]').val(DateToVal(dstart.addDays(diff)));
-    $('input[name=dend]').val(DateToVal(dend.addDays(diff)));
+    $('input[name=dstart]').val(DateToVal(dstart.add(diff, 'days')));
+    $('input[name=dend]').val(DateToVal(dend.add(diff, 'days')));
 
     Update();
 });
@@ -118,6 +154,10 @@ function Update() {
     $('#spinner').attr("hidden", false);
     var url = "/api/Graph/By";
     switch ($("input[name='group_by']:checked").val()) {
+        case '0':
+            url += "Hour";
+            break;
+
         case '1':
             url += "Day";
             break;
@@ -162,8 +202,7 @@ function Update() {
 }
 
 $(document).ready(function () {
-    $('input[name=dstart]').val(DateToVal(Date.today().add(-1).months()));
-    $('input[name=dend]').val(DateToVal(Date.today()));
-
+    $('input[name=dstart]').val(DateToVal(moment().add(-1, 'months')));
+    $('input[name=dend]').val(DateToVal(moment()));
     Update();
 });

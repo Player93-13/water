@@ -217,10 +217,6 @@
     },
     {
       "library": "bootstrap-icons@1.8.1",
-      "destination": "wwwroot/lib/bootstrap-icons/"
-    },
-    {
-      "library": "bootstrap-icons@1.8.1",
       "destination": "wwwroot/lib/bootstrap-icons/",
       "files": [
         "font/fonts/bootstrap-icons.woff",
@@ -228,6 +224,10 @@
         "font/bootstrap-icons.css",
         "font/bootstrap-icons.scss"
       ]
+    },
+    {
+      "library": "chartjs-adapter-moment@1.0.0",
+      "destination": "wwwroot/lib/chartjs-adapter-moment/"
     }
   ]
 }

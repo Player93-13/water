@@ -75,6 +75,41 @@ namespace water.Controllers
                 d => d.ToString("dd.MM"));
         }
 
+        public async Task<object> ByHourAsync(DateTime dateStart, DateTime dateEnd)
+        {
+            var userId = HttpContext.User.GetId();
+            var datasets = await _context.Meters
+                .Where(m => m.UserId == userId)
+                .Select(m => new
+                {
+                    Meter = m,
+                    StartReading = m.Readings.Where(r => r.Date < dateStart.Date).OrderByDescending(r => r.Id).Select(r => r.Value).FirstOrDefault()
+                })
+                .Select(m => new
+                {
+                    label = m.Meter.Title ?? m.Meter.Number,
+                    backgroundColor = m.Meter.ColorGraphHex,
+                    borderColor = m.Meter.ColorGraphHex,
+                    cubicInterpolationMode = "monotone",
+                    tension = 0.4,
+                    fill = false,
+                    data = m.Meter.Readings
+                        .Where(mr => mr.Date >= dateStart.Date && mr.Date < dateEnd.AddDays(1).Date)
+                        .Select(mr => new { x = mr.Date, y = mr.Value - m.StartReading })
+                })
+                .ToListAsync();
+
+            var labels = new List<DateTime>();
+            var sTemp = dateStart.Date;
+            while (sTemp <= dateEnd.Date)
+            {
+                labels.Add(sTemp.Date);
+                sTemp = sTemp.AddHours(1);
+            }
+
+            return new { datasets };
+        }
+
         class GroupBy
         {
             public GroupBy(int meterId, DateTime date)
@@ -172,7 +207,9 @@ namespace water.Controllers
                                    label = m.Meter.Title ?? m.Meter.Number,
                                    backgroundColor = m.Meter.ColorGraphHex,
                                    borderColor = m.Meter.ColorGraphHex,
-                                   m.data
+                                   m.data,
+                                   cubicInterpolationMode = "monotone",
+                                   tension = 0.4
                                };
 
                 var labels = dates.Select(labelSelect);
