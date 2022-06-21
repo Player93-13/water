@@ -10,9 +10,9 @@ RTCVars state;
 //#define DEBUG
 #define N 2 // максимальное количество счетчиков
 
-const char stateFile[] = "/state123456.bin";
-const char sendedFile[] = "/sended123456.bin";
-const int pins[N] = {5, 4/*, 0, 2, 14, 12, 13, 15*/}; // пины счетчиков (не изменяются)
+const char stateFile[] = "/state12345678.bin";
+const char sendedFile[] = "/sended12345678.bin";
+const int pins[N] = {14, 12/*, 13, 15*/}; // пины счетчиков (не изменяются) {D5, D6, D7, D8}
 
 int sleepTime = 4000; // время между циклами сна в мс
 int serverSendDelta = 50; // периодичность отправки на сервер в литрах
@@ -24,7 +24,7 @@ struct
   char url[128] = "http://194.54.66.110/api/MeterReadings"; // адрес для отправки на сервер
   char names[N][32] = {"44958160", "44354311"};            // идентификаторы счетчиков
   uint32_t valueOfDivisions[N] = {10, 10}; // литров на импульс счетчиков
-  uint32_t offsets[N] = {3566, 5015};          // начальное значение отсчета счетчиков в литрах
+  uint32_t offsets[N] = {62373, 106987};          // начальное значение отсчета счетчиков в литрах
 } conf;
 
 int rtcPinStates[N];
