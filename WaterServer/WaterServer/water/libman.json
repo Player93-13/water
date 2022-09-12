@@ -166,7 +166,21 @@
       "destination": "wwwroot/lib/jquery-validation-unobtrusive/"
     },
     {
-      "library": "bootstrap@5.1.3",
+      "library": "bootstrap-icons@1.8.1",
+      "destination": "wwwroot/lib/bootstrap-icons/",
+      "files": [
+        "font/fonts/bootstrap-icons.woff",
+        "font/fonts/bootstrap-icons.woff2",
+        "font/bootstrap-icons.css",
+        "font/bootstrap-icons.scss"
+      ]
+    },
+    {
+      "library": "chartjs-adapter-moment@1.0.0",
+      "destination": "wwwroot/lib/chartjs-adapter-moment/"
+    },
+    {
+      "library": "bootstrap@5.2.1",
       "destination": "wwwroot/lib/bootstrap/",
       "files": [
         "dist/css/bootstrap-grid.css",
@@ -214,20 +228,6 @@
         "dist/js/bootstrap.min.js",
         "dist/js/bootstrap.min.js.map"
       ]
-    },
-    {
-      "library": "bootstrap-icons@1.8.1",
-      "destination": "wwwroot/lib/bootstrap-icons/",
-      "files": [
-        "font/fonts/bootstrap-icons.woff",
-        "font/fonts/bootstrap-icons.woff2",
-        "font/bootstrap-icons.css",
-        "font/bootstrap-icons.scss"
-      ]
-    },
-    {
-      "library": "chartjs-adapter-moment@1.0.0",
-      "destination": "wwwroot/lib/chartjs-adapter-moment/"
     }
   ]
 }
