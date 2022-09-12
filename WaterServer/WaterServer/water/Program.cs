@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.WebEncoders;
+using System.IO;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using water.Data;
@@ -29,6 +31,9 @@ builder.Services.Configure<WebEncoderOptions>(options =>
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+
+builder.Services.AddDataProtection()
+    .PersistKeysToDbContext<ApplicationDbContext>();
 
 var app = builder.Build();
 
